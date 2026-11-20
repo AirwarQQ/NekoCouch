@@ -65,8 +65,7 @@ namespace NekoCouch
             catch { return SystemIcons.Application; }
         }
 
-        // The tray wants the small frame drawn for its size (just the play mark at 16–24 px), not
-        // the 32 px TV scaled down into a blur.
+        // The smaller cat frames have thicker strokes for the notification area.
         private static System.Drawing.Icon LoadTrayIcon()
         {
             try
@@ -78,7 +77,7 @@ namespace NekoCouch
             return LoadAppIcon();
         }
 
-        // Overlays a small colored status dot (bottom-right) on the app icon, for the tray.
+        // The upper left is clear of both the face and the sleep marks.
         private static System.Drawing.Icon BuildStatusIcon(System.Drawing.Icon baseIcon, System.Drawing.Color? dotColor)
         {
             using (var bmp = baseIcon.ToBitmap())
@@ -88,8 +87,8 @@ namespace NekoCouch
                     using (var g = System.Drawing.Graphics.FromImage(bmp))
                     {
                         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                        int size = Math.Max(5, bmp.Width * 7 / 16);
-                        var rect = new System.Drawing.Rectangle(bmp.Width - size, bmp.Height - size, size - 1, size - 1);
+                        int size = Math.Max(4, bmp.Width / 3);
+                        var rect = new System.Drawing.Rectangle(1, 1, size - 1, size - 1);
                         using (var ring = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(0x0A, 0x0C, 0x18)))
                             g.FillEllipse(ring, System.Drawing.Rectangle.Inflate(rect, 1, 1));
                         using (var brush = new System.Drawing.SolidBrush(dotColor.Value))

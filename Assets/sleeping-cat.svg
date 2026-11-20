@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 64" width="400" height="256">
+  <title>Sleeping NekoCouch cat</title>
+  <g fill="none" stroke="#fff0da" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round">
+    <!-- The cheek and the curled tail share the long, low outline. -->
+    <path d="M58 35 C50 24 42 20 32 21 C18 22 9 32 7 45 C2 48 3 54 10 57 C18 61 33 61 49 61 L66 61 C78 61 88 60 93 56 C98 53 96 49 90 47 L91 34 L80 38 Q75 35 69 36 L63 27 L56 36 L51 41"/>
+    <path d="M31 44 Q40 44 41 53 Q47 53 48 59"/>
+    <path d="M62 49 l4 1 M79 49 l4 -1"/>
+    <path d="M74 17 h7 l-7 9 h7 M87 5 h9 l-9 11 h9"/>
+  </g>
+</svg>

@@ -46,9 +46,16 @@
         <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{StaticResource DeepBrush}" />
         <ui:TitleBar Grid.Row="0" Grid.ColumnSpan="2" ShowMaximize="True" Title="" Height="36" />
         <!-- App mark in the title bar; not hit-testable, so the bar still drags the window. -->
-        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
-            <Border Width="15" Height="15" CornerRadius="4" Background="{StaticResource SakuraDiagonal}" Margin="0,0,10,0" />
-            <TextBlock Text="NekoCouch" FontSize="12" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" UseLayoutRounding="True">
+            <Viewbox Width="27" Height="18" Margin="0,0,6,2" VerticalAlignment="Center">
+                <Canvas Width="100" Height="64">
+                    <Path Stroke="{StaticResource SakuraGradient}" StrokeThickness="4.5" StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          Data="M58,35 C50,24 42,20 32,21 C18,22 9,32 7,45 C2,48 3,54 10,57 C18,61 33,61 49,61 L66,61 C78,61 88,60 93,56 C98,53 96,49 90,47 L91,34 80,38 Q75,35 69,36 L63,27 56,36 51,41 M31,44 Q40,44 41,53 Q47,53 48,59 M62,49 l4,1 M79,49 l4,-1 M74,17 h7 l-7,9 h7 M87,5 h9 l-9,11 h9" />
+                </Canvas>
+            </Viewbox>
+            <TextBlock FontFamily="{StaticResource DisplayFont}" FontWeight="ExtraBold" FontSize="14" VerticalAlignment="Center"
+                       Foreground="{StaticResource TextBrush}"><Run Text="Neko"/><Run Text="Couch" Foreground="{StaticResource SakuraGradient}"/></TextBlock>
         </StackPanel>
 
         <!-- ============================== Sidebar ============================== -->

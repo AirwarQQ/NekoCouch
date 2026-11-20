@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner-ru.png" alt="NekoCouch — твой игровой ПК теперь консоль у дивана">
+  <img src="docs/images/banner-ru.png" alt="Логотип NekoCouch со спящим котом. Твой игровой ПК — теперь консоль у дивана.">
 </p>
 
 <p align="center"><a href="README.md">English</a> · <b>Русский</b></p>
