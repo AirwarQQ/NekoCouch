@@ -585,6 +585,22 @@
                         </DockPanel>
                     </Border>
 
+                    <Border Style="{StaticResource SettingRow}">
+                        <DockPanel>
+                            <Border Style="{StaticResource IconTile}" VerticalAlignment="Top"><ui:SymbolIcon Symbol="Games24" Style="{StaticResource TileIcon}" /></Border>
+                            <ToggleButton DockPanel.Dock="Right" x:Name="ChkGamepadShortcuts" Style="{StaticResource Toggle}"
+                                          AutomationProperties.Name="{l:Tr Set.Pad}" />
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="{l:Tr Set.Pad}" Style="{StaticResource RowTitle}" />
+                                <TextBlock Text="{l:Tr Set.Pad.Sub}" Style="{StaticResource Hint}" />
+                                <TextBlock x:Name="LblGamepadInput" Style="{StaticResource Hint}" Margin="0,4,0,0"
+                                           Foreground="{StaticResource SoftBrush}" />
+                                <CheckBox x:Name="ChkGamepadSound" Content="{l:Tr Set.Pad.Sound}" Margin="0,8,0,0"
+                                          IsEnabled="{Binding IsChecked, ElementName=ChkGamepadShortcuts}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
                     <!-- About -->
                     <TextBlock Text="{l:Tr Set.About}" Style="{StaticResource Section}" />
                     <Border Style="{StaticResource SettingRow}">

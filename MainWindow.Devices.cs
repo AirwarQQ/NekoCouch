@@ -93,6 +93,7 @@ namespace NekoCouch
             base.OnSourceInitialized(e);
             var hwnd = new WindowInteropHelper(this).Handle;
             HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+            ApplyGamepadShortcuts();
             _devNotifyHandle = Native.RegisterForAllDeviceInterfaces(hwnd);
             _hotkeys = new GlobalHotkeys(hwnd);
             var errors = ApplySavedHotkeys();
@@ -106,6 +107,8 @@ namespace NekoCouch
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            if (msg == 0x00ff) _flydigiShortcuts?.Read(lParam); // WM_INPUT
+            if (msg == 0x00fe && wParam.ToInt64() == 2) _flydigiShortcuts?.DeviceRemoved(lParam);
             if (msg == 0x0312 && (wParam.ToInt32() == GlobalHotkeys.ActivateId || wParam.ToInt32() == GlobalHotkeys.DeactivateId))
             {
                 handled = true;

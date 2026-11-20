@@ -51,6 +51,8 @@ namespace NekoCouch
         public bool MinimizeSteamAfter = true;   // minimize the Steam window once back on the PC
         public int RestoreGraceSec = 10;         // how long a "back to PC on disconnect" device may be gone first
         public bool HotkeyToggle = false;        // one shortcut: Play on TV when off, Back to PC when on
+        public bool GamepadShortcutsEnabled;
+        public bool GamepadShortcutSound;
         public bool AnimateBanner = true;        // Home banner motion; off = a still picture, no CPU
         public bool Notifications = true;        // Windows notifications (TV not reachable, new IP, updates…)
 
@@ -98,6 +100,8 @@ namespace NekoCouch
                     s.MinimizeSteamAfter = ToInt(k.GetValue("MinimizeSteamAfter"), 1) != 0;
                     s.RestoreGraceSec = Math.Max(3, Math.Min(600, ToInt(k.GetValue("RestoreGraceSec"), s.RestoreGraceSec)));
                     s.HotkeyToggle = ToInt(k.GetValue("HotkeyToggle"), 0) != 0;
+                    s.GamepadShortcutsEnabled = ToInt(k.GetValue("GamepadShortcuts"), 0) != 0;
+                    s.GamepadShortcutSound = ToInt(k.GetValue("GamepadShortcutSound"), 0) != 0;
                     s.AnimateBanner = ToInt(k.GetValue("AnimateBanner"), 1) != 0;
                     s.Notifications = ToInt(k.GetValue("Notifications"), 1) != 0;
                     s.TargetDisplay = ToInt(k.GetValue("TargetDisplay"), s.TargetDisplay);
@@ -191,6 +195,8 @@ namespace NekoCouch
                     k.SetValue("MinimizeSteamAfter", MinimizeSteamAfter ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("RestoreGraceSec", RestoreGraceSec, RegistryValueKind.DWord);
                     k.SetValue("HotkeyToggle", HotkeyToggle ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("GamepadShortcuts", GamepadShortcutsEnabled ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("GamepadShortcutSound", GamepadShortcutSound ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("AnimateBanner", AnimateBanner ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("Notifications", Notifications ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("TargetDisplay", TargetDisplay, RegistryValueKind.DWord);

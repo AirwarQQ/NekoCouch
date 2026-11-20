@@ -17,12 +17,14 @@ namespace NekoCouch
 
     internal static class AudioSwitcher
     {
-        public static string GetDefaultId()
+        public static string GetDefaultId() => GetDefaultId(ERole.eMultimedia);
+
+        private static string GetDefaultId(ERole role)
         {
             try
             {
                 IMMDevice dev;
-                if (Enumerator().GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out dev) != 0 || dev == null) return null;
+                if (Enumerator().GetDefaultAudioEndpoint(EDataFlow.eRender, role, out dev) != 0 || dev == null) return null;
                 string id;
                 dev.GetId(out id);
                 return id;
@@ -52,18 +54,42 @@ namespace NekoCouch
             return list;
         }
 
-        public static bool SetDefault(string id, out string error)
+        private static readonly ERole[] Roles = { ERole.eConsole, ERole.eMultimedia, ERole.eCommunications };
+
+        public static string[] CaptureDefaults()
+        {
+            var ids = Roles.Select(GetDefaultId).ToArray();
+            return ids.All(id => id != null) ? ids : null;
+        }
+
+        public static bool SetDefault(string id, out string error) =>
+            ApplyDefaults(role => id, out error);
+
+        public static bool RestoreDefaults(string[] ids, out string error)
+        {
+            // Windows may take a moment to enumerate an HDMI endpoint after restoring its monitor.
+            for (int attempt = 0; ; attempt++)
+            {
+                if (ApplyDefaults(role => ids[(int)role], out error)) return true;
+                if (attempt == 8) return false;
+                Thread.Sleep(250);
+            }
+        }
+
+        private static bool ApplyDefaults(Func<ERole, string> endpoint, out string error)
         {
             error = null;
             try
             {
                 var policy = (IPolicyConfig)new PolicyConfigClient();
-                foreach (var role in new[] { ERole.eConsole, ERole.eMultimedia, ERole.eCommunications })
+                foreach (var role in Roles)
                 {
+                    string id = endpoint(role);
+                    if (GetDefaultId(role) == id) continue;
                     int hr = policy.SetDefaultEndpoint(id, role);
-                    if (hr != 0) { error = "SetDefaultEndpoint=0x" + hr.ToString("X8"); return false; }
+                    if (hr != 0) error = "SetDefaultEndpoint(" + role + ")=0x" + hr.ToString("X8");
                 }
-                return true;
+                return error == null;
             }
             catch (Exception ex) { error = ex.Message; return false; }
         }

@@ -56,6 +56,8 @@ Turn on **Start with Windows** in Settings and you'll never need to open it agai
 - **TV far from the PC?** An optical (fiber) HDMI cable works over 15–20 m without a hitch — the author's setup runs on one.
 - **Network debugging turns itself off** on many TVs after a reboot. On the author's TV, **tvQuickActions** keeps it on; [adb-auto-enable](https://github.com/mouldybread/adb-auto-enable) and [KeepADB](https://f-droid.org/packages/de.hohnepeople.keepadb/) do the same job.
 - **When a controller disconnects** NekoCouch can go back to the PC by itself — turn it on per device on the Devices page; how long it waits is in Settings.
+- **Switch from the couch on demand.** Stop monitoring and turn on **Gamepad shortcuts** in Settings. Hold **LB + RB + D-pad ↑** for 2 seconds to play on TV, or **LB + RB + D-pad ↓** to return to the PC. The shortcuts work on XInput gamepads (including virtual Xbox controllers) and on the Flydigi APEX 5 via its native HID input. A confirmation sound is optional.
+- If Windows cannot activate the display, the HDMI switch fails, or Steam reports a launch error, NekoCouch tries to restore the previous monitor layout and audio output. If Windows rejects the saved layout, NekoCouch tries Extend mode.
 
 <p align="center">
   <img src="docs/images/catgirl-tv.jpg" alt="How it works: 1. A controller connects — the TV wakes over Wi-Fi, switches to the PC's HDMI, the sound follows, Big Picture opens. 2. Big Picture closes — your monitors, sound and TV come back. No HDMI-CEC needed; works with Android / Google TVs over ADB.">

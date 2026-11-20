@@ -219,7 +219,7 @@ namespace NekoCouch
                 else if (snap.Paths[i].targetInfo.targetAvailable != 0 && idx < 0) { idx = i; }
             }
 
-            if (idxAlready >= 0 && idx < 0) return true; // already enabled
+            if (idxAlready >= 0) return true; // already enabled
             if (idx < 0)
             {
                 error = "Display #" + displayNumber + " not found among available paths.";
@@ -406,7 +406,7 @@ namespace NekoCouch
             var snap = QueryAll(out error);
             if (snap == null) return null;
 
-            foreach (var p in snap.Paths)
+            foreach (var p in snap.Paths.OrderByDescending(IsActive))
             {
                 if (NumberOf(p) == displayNumber && p.targetInfo.targetAvailable != 0)
                 {
@@ -429,6 +429,19 @@ namespace NekoCouch
                 && p.targetInfo.id == id.TargetId;
         }
 
+        public static int? ActiveNumber(PhysicalDisplayId target, out string error)
+        {
+            var snap = QueryAll(out error);
+            if (snap == null) return null;
+            foreach (var path in snap.Paths)
+            {
+                if (!Matches(target, path) || !IsActive(path)) continue;
+                int number = NumberOf(path);
+                if (number > 0) return number;
+            }
+            error = "The target display is not active.";
+            return null;
+        }
 
         // Disable all active displays except the one identified by targetId, in a single SetDisplayConfig call.
         public static bool DisableAllExceptPhysical(PhysicalDisplayId targetId, out string error, Action<string> log = null)
@@ -436,6 +449,11 @@ namespace NekoCouch
             error = null;
             var snap = QueryAll(out error);
             if (snap == null) return false;
+            if (!snap.Paths.Any(p => IsActive(p) && Matches(targetId, p)))
+            {
+                error = "The target display is not active.";
+                return false;
+            }
 
             bool anyChanged = false;
             for (int i = 0; i < snap.Paths.Length; i++)
@@ -486,7 +504,7 @@ namespace NekoCouch
                 return true;
 
             // 2) with mode modification allowed
-            if (Apply(snap.Paths, snap.Modes, ApplyFlags, out error))
+            if (ApplyCompact(snap.Paths, snap.Modes, out error))
                 return true;
 
             // 3) fallback — just "Extend to all monitors"

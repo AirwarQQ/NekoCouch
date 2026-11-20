@@ -23,6 +23,8 @@ namespace NekoCouch
     {
         private readonly AppSettings _settings;
         private readonly MonitorService _monitor;
+        private GamepadShortcuts _gamepadShortcuts;
+        private FlydigiShortcuts _flydigiShortcuts;
         private readonly HomeAssistantMqtt _ha;
 
         private Forms.NotifyIcon _tray;
@@ -74,6 +76,7 @@ namespace NekoCouch
 
             LoadSettingsToUi();
             WireAutoSave();
+            ApplyGamepadShortcuts();
             UpdateHotkeyHints();
             InitDevicesTab();
             BuildTestButtons();
@@ -317,6 +320,8 @@ namespace NekoCouch
             ChkNotifications.IsChecked = _settings.Notifications;
             Scene.Animate = _settings.AnimateBanner;
             ChkHotkeyToggle.IsChecked = _settings.HotkeyToggle;
+            ChkGamepadShortcuts.IsChecked = _settings.GamepadShortcutsEnabled;
+            ChkGamepadSound.IsChecked = _settings.GamepadShortcutSound;
             UpdateHotkeyFields();
             FillGrace();
             CmbLanguage.SelectedItem = CmbLanguage.Items.Cast<ComboBoxItem>()
@@ -360,6 +365,9 @@ namespace NekoCouch
             _settings.MinimizeSteamAfter = ChkMinimizeSteam.IsChecked == true;
             _settings.AnimateBanner = ChkAnimate.IsChecked == true;
             _settings.Notifications = ChkNotifications.IsChecked == true;
+            _settings.GamepadShortcutsEnabled = ChkGamepadShortcuts.IsChecked == true;
+            _settings.GamepadShortcutSound = ChkGamepadSound.IsChecked == true;
+            ApplyGamepadShortcuts();
             Scene.Animate = _settings.AnimateBanner;
             if (CmbGrace.SelectedItem is ComboBoxItem grace) _settings.RestoreGraceSec = (int)grace.Tag;
             _settings.DisableOthers = ChkDisableOthers.IsChecked == true;
@@ -384,13 +392,42 @@ namespace NekoCouch
         {
             RoutedEventHandler save = (s, e) => SaveUiToSettings();
             foreach (var t in new[] { ChkWakeTV, ChkSourceSwitch, ChkRestoreTvApp, ChkSleepTv, ChkDisableOthers,
-                                      ChkSwitchAudio, ChkHdr, ChkBigPicture, ChkAutoMonitor, ChkMinimizeSteam, ChkAnimate, ChkNotifications })
+                                      ChkSwitchAudio, ChkHdr, ChkBigPicture, ChkAutoMonitor, ChkMinimizeSteam, ChkAnimate, ChkNotifications,
+                                      ChkGamepadShortcuts, ChkGamepadSound })
             { t.Checked += save; t.Unchecked += save; }
             foreach (var t in new[] { TxtIp, TxtTvHomeComponent, TxtTvAudioDevice, TxtSteamPath, TxtAdbPath })
                 t.LostKeyboardFocus += (s, e) => SaveUiToSettings();
             CmbHdmi.SelectionChanged += (s, e) => SaveUiToSettings();
             CmbDisplay.SelectionChanged += (s, e) => SaveUiToSettings();
             CmbGrace.SelectionChanged += (s, e) => { SaveUiToSettings(); RefreshDeviceTexts(); };
+        }
+
+        private void ApplyGamepadShortcuts()
+        {
+            if (_settings.GamepadShortcutsEnabled)
+            {
+                _gamepadShortcuts ??= new GamepadShortcuts(_monitor.GamepadCommand);
+                var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero && _flydigiShortcuts == null)
+                {
+                    try { _flydigiShortcuts = new FlydigiShortcuts(hwnd, _monitor.GamepadCommand); }
+                    catch (Win32Exception ex) { AppendLog("Flydigi input: " + ex.Message); }
+                }
+            }
+            else
+            {
+                _flydigiShortcuts?.Dispose();
+                _flydigiShortcuts = null;
+                _gamepadShortcuts?.Dispose();
+                _gamepadShortcuts = null;
+            }
+            UpdateGamepadInput();
+        }
+
+        private void UpdateGamepadInput()
+        {
+            LblGamepadInput.Visibility = _gamepadShortcuts == null ? Visibility.Collapsed : Visibility.Visible;
+            LblGamepadInput.Text = _gamepadShortcuts?.DescribeInput(_flydigiShortcuts) ?? "";
         }
 
         private int HdmiPortUi
@@ -480,7 +517,7 @@ namespace NekoCouch
 
         private void DeactivateNow(bool interactive = true)
         {
-            if (!ValidateIpOrWarn(interactive)) return;
+            if (!_monitor.IsDisplayActive && !ValidateIpOrWarn(interactive)) return;
             SaveUiToSettings();
             _monitor.DeactivateNow();
         }
@@ -514,6 +551,7 @@ namespace NekoCouch
         private void OnStatusTick()
         {
             UpdateStatusLabel();
+            if (IsVisible && CurrentPage == 2) UpdateGamepadInput();
             if ((DateTime.Now - _lastUpdateCheck).TotalHours >= 24) _ = CheckForUpdatesAsync();
 
             // Live device status — only while someone can actually see the Devices tab.
@@ -615,20 +653,22 @@ namespace NekoCouch
             string phase = _monitor.PhaseKey;
             bool unreachable = !setup && _lastAdbReachable == false && !active;
             string state = phase != null ? (phase == "Phase.Back" ? "Returning" : "Busy")
+                : _monitor.RestorePending ? "RestorePending"
                 : setup ? "Setup" : active ? "Active" : unreachable ? "Unreachable" : running ? "Ready" : "Paused";
             string title = Loc.T("Home.Title." + state);
             string text = state == "Busy" || state == "Returning" ? Loc.T(phase, _monitor.PhaseArg)
                 : state == "Ready" ? (trigger != null ? Loc.T("Home.Text.Ready", trigger.DisplayName) : Loc.T("Home.Text.ReadyNoDevice"))
+                : state == "Paused" && _settings.GamepadShortcutsEnabled ? Loc.T("Home.Text.PadReady")
                 : state == "Unreachable" ? Loc.T("Home.Text.Unreachable", _settings.TvIp)
                 : Loc.T("Home.Text." + state);
             SetHeroText(title, text);
 
-            string pill = Loc.T(state == "Busy" || state == "Returning" ? "Home.Status.Busy" : setup ? "Home.Status.Setup" : active ? "Home.Status.Active"
+            string pill = Loc.T(state == "Busy" || state == "Returning" ? "Home.Status.Busy" : state == "RestorePending" ? "Home.Status.RestorePending" : setup ? "Home.Status.Setup" : active ? "Home.Status.Active"
                 : unreachable ? "Home.Status.Unreachable" : running ? "Home.Status.Waiting" : "Home.Status.Paused");
             if (!setup) pill += "  ·  " + TvDisplayName() + "  ·  HDMI " + _settings.HdmiPort;
             LblStatus.Text = pill;
             var pillColor = ((System.Windows.Media.SolidColorBrush)(state == "Busy" || state == "Returning" ? Lavender
-                : active ? Sakura : unreachable ? Rose : running && !setup ? Sky : Muted)).Color;
+                : state == "RestorePending" ? Rose : active ? Sakura : unreachable ? Rose : running && !setup ? Sky : Muted)).Color;
             SetPillColor(pillColor, glow: pillColor != ((System.Windows.Media.SolidColorBrush)Muted).Color);
 
             BtnActivateNow.Visibility = BtnDeactivateNow.Visibility = setup ? Visibility.Collapsed : Visibility.Visible;
@@ -837,7 +877,9 @@ namespace NekoCouch
                 return;
             }
             _statusTimer?.Stop();
+            _flydigiShortcuts?.Dispose();
             _hotkeys?.Dispose();
+            _gamepadShortcuts?.Dispose();
             Loc.Changed -= OnLanguageChanged;
             _monitor.Log -= AppendLog;
             _monitor.RunningChanged -= OnRunningChanged;
