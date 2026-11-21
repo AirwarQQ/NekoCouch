@@ -160,7 +160,7 @@ namespace NekoCouch
             _tray.DoubleClick += (s, e) => RestoreFromTray();
             _tray.BalloonTipClicked += (s, e) =>
             {
-                if (_updateAvailable) InstallUpdate();
+                if (_updateTag != null) InstallUpdate();
             };
             RefreshTrayTexts();
         }

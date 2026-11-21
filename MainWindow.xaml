@@ -81,7 +81,12 @@
                                 </Ellipse>
                                 <TextBlock x:Name="LblNavStatus" FontSize="12" Foreground="{StaticResource SoftBrush}" />
                             </StackPanel>
-                            <TextBlock x:Name="LblNavVersion" Style="{StaticResource Hint}" Margin="0,4,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock x:Name="LblNavVersion" Style="{StaticResource Hint}" VerticalAlignment="Center" />
+                                <Button x:Name="BtnNavUpdate" Visibility="Collapsed" Style="{StaticResource QuietButton}"
+                                        Content="{l:Tr Upd.Install}" Click="NavUpdate_Click" Margin="8,0,0,0" Padding="8,2"
+                                        Foreground="{StaticResource SakuraBrush}" FontSize="12" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -117,10 +117,9 @@ namespace NekoCouch
         }
 
         // -------------------------------------------------------------------------
-        // Update check — one-shot on startup, silent unless a newer release exists.
+        // Update checks and installation.
         // -------------------------------------------------------------------------
 
-        private bool _updateAvailable;
         private string _updateTag;
         private Forms.ToolStripMenuItem _miTrayUpdate;
 
@@ -135,10 +134,15 @@ namespace NekoCouch
             if (manual && !fromTray) { LblUpdateStatus.Text = Loc.T("Upd.Checking"); LblUpdateStatus.Visibility = Visibility.Visible; }
             string tag = await UpdateChecker.GetLatestTagAsync();
             var current = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            if (!UpdateChecker.IsNewer(tag, current))
+            Dispatcher.Invoke(() =>
             {
-                if (manual)
-                    Dispatcher.Invoke(() =>
+                bool newRelease = UpdateChecker.IsNewer(tag, current);
+                bool changed = newRelease && _updateTag != tag;
+                // A failed check shouldn't dismiss an update that was already discovered.
+                if (tag != null) SetAvailableUpdate(newRelease ? tag : null);
+                if (!newRelease)
+                {
+                    if (manual)
                     {
                         string time = DateTime.Now.ToString("HH:mm");
                         LblUpdateStatus.Text = Loc.T(tag == null ? "Upd.CheckedFail" : "Upd.Checked", time);
@@ -147,17 +151,17 @@ namespace NekoCouch
                         if (fromTray)
                             _tray?.ShowBalloonTip(5000, "NekoCouch", Loc.T(tag == null ? "Upd.Failed" : "Upd.Latest"),
                                 tag == null ? Forms.ToolTipIcon.Warning : Forms.ToolTipIcon.Info);
-                    });
-                return;
-            }
-
-            Dispatcher.Invoke(() =>
-            {
-                if (manual) { _updateTag = tag; InstallUpdate(); return; }
-                if (_updateTag == tag) return;   // already announced this one
-                _updateAvailable = true;
-                _updateTag = tag;
-                if (_miTrayUpdate != null) { _miTrayUpdate.Text = Loc.T("Tray.Update", tag); _miTrayUpdate.Visible = true; }
+                    }
+                    return;
+                }
+                if (manual)
+                {
+                    LblUpdateStatus.Text = Loc.T("Tray.Update", tag);
+                    LblUpdateStatus.Foreground = Mint;
+                    InstallUpdate();
+                    return;
+                }
+                if (!changed) return;
                 AppendLog("Update available: " + tag + " (running v" + current.Major + "." + current.Minor + "." + current.Build + ") — " + UpdateChecker.ReleasesPageUrl);
                 if (_settings.Notifications) _tray?.ShowBalloonTip(8000, Loc.T("Msg.UpdateTitle"), Loc.T("Msg.UpdateText", tag), Forms.ToolTipIcon.Info);
             });
@@ -165,17 +169,37 @@ namespace NekoCouch
 
         private bool _updating;
 
+        private void SetAvailableUpdate(string tag)
+        {
+            _updateTag = tag;
+            BtnNavUpdate.Visibility = tag == null ? Visibility.Collapsed : Visibility.Visible;
+            _miTrayUpdate.Visible = tag != null;
+            if (tag != null) _miTrayUpdate.Text = Loc.T("Tray.Update", tag);
+        }
+
+        private void NavUpdate_Click(object sender, RoutedEventArgs e) => InstallUpdate();
+
         private async void InstallUpdate()
         {
-            if (_updating || _updateTag == null) return;
-            if (System.Windows.MessageBox.Show(Loc.T("Msg.UpdateAsk", _updateTag),
-                    "NekoCouch", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            string tag = _updateTag;
+            if (_updating || tag == null) return;
             _updating = true;
-            AppendLog("Downloading " + _updateTag + "…");
-            var restoring = _monitor.IsDisplayActive ? _monitor.DeactivateNow() : Task.CompletedTask;
-            string err = await Updater.InstallAsync(_updateTag, startHidden: !IsVisible);
-            await restoring;   // never exit halfway through putting the monitors back
-            _updating = false;
+            BtnNavUpdate.IsEnabled = false;
+            string err;
+            try
+            {
+                if (System.Windows.MessageBox.Show(Loc.T("Msg.UpdateAsk", tag),
+                        "NekoCouch", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+                AppendLog("Downloading " + tag + "…");
+                var restoring = _monitor.IsDisplayActive ? _monitor.DeactivateNow() : Task.CompletedTask;
+                err = await Updater.InstallAsync(tag, startHidden: !IsVisible);
+                await restoring;   // never exit halfway through putting the monitors back
+            }
+            finally
+            {
+                _updating = false;
+                BtnNavUpdate.IsEnabled = true;
+            }
             if (err == null) { AppendLog("Update installed — restarting."); _reallyExit = true; Close(); return; }
             AppendLog("Update failed: " + err);
             if (System.Windows.MessageBox.Show(Loc.T("Msg.UpdateFailed", err), "NekoCouch",
